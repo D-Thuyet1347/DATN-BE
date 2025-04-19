@@ -1,8 +1,7 @@
 import BookingModel from "../models/bookingModel.js";
-import userModel from "../models/userModel.js"; // Thêm import userModel
-import nodemailer from "nodemailer"; // Thêm import nodemailer
+import userModel from "../models/userModel.js";
+import nodemailer from "nodemailer";
 
-// Hàm gửi email xác nhận lịch đặt
 const sendBookingConfirmationEmail = async (userEmail, bookingDetails) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -29,6 +28,7 @@ const sendBookingConfirmationEmail = async (userEmail, bookingDetails) => {
         <li><strong>Thời lượng</strong>: ${bookingDetails.duration} phút</li>
         <li><strong>Ghi chú</strong>: ${bookingDetails.notes || "Không có"}</li>
         <li><strong>Trạng thái</strong>: ${bookingDetails.status}</li>
+        <li><strong>Tổng tiền</strong>: ${bookingDetails.totalAmount.toLocaleString('vi-VN')}đ</li>
       </ul>
       <p>Vui lòng kiểm tra thông tin và liên hệ với chúng tôi nếu cần thay đổi.</p>
       <p>Chúc bạn một ngày tốt lành!</p>
@@ -42,17 +42,15 @@ const createBooking = async (req, res) => {
   try {
     console.log('Request body:', req.body);
 
-    const { service, branch, employee, date, time, duration } = req.body;
+    const { service, branch, employee, date, time, duration, notes, discount, totalAmount } = req.body;
 
-    // Validate required fields
-    if (!service || !branch || !employee || !date || !time) {
+    if (!service || !branch || !employee || !date || !time || !totalAmount) {
       return res.status(400).json({
         success: false,
         message: "Thiếu thông tin bắt buộc"
       });
     }
 
-    // Convert time to minutes for comparison
     const convertToMinutes = (timeStr) => {
       const [hours, minutes] = timeStr.split(':').map(Number);
       return hours * 60 + minutes;
@@ -61,7 +59,6 @@ const createBooking = async (req, res) => {
     const newStart = convertToMinutes(time);
     const newEnd = newStart + (parseInt(duration) || 60);
 
-    // Check for overlapping bookings
     const existingBookings = await BookingModel.find({
       employee,
       date
@@ -79,7 +76,6 @@ const createBooking = async (req, res) => {
       }
     }
 
-    // Create new booking
     const newBooking = new BookingModel({
       user: req.user._id,
       service,
@@ -88,11 +84,12 @@ const createBooking = async (req, res) => {
       date,
       time,
       duration: duration || 60,
-      notes: req.body.notes || '',
+      notes: notes || '',
+      discount: discount || 0,
+      totalAmount,
       status: "Đang xử lý"
     });
 
-    // Lưu booking và populate thông tin liên quan
     const savedBooking = await newBooking.save();
     const populatedBooking = await BookingModel.findById(savedBooking._id)
       .populate("user", "email")
@@ -103,12 +100,10 @@ const createBooking = async (req, res) => {
         populate: { path: "UserID", select: "firstName lastName" },
       });
 
-    // Gửi email xác nhận
     try {
       await sendBookingConfirmationEmail(populatedBooking.user.email, populatedBooking);
     } catch (emailError) {
       console.error('Lỗi khi gửi email xác nhận:', emailError);
-      // Không trả về lỗi cho client, chỉ ghi log vì booking đã thành công
     }
 
     res.status(201).json({
@@ -201,15 +196,14 @@ const getBookingUser = async (req, res) => {
   }
 };
 
-// Update booking
 const updateBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const { date, time, notes, status } = req.body;
+    const { date, time, notes, status, totalAmount } = req.body;
 
     const booking = await BookingModel.findByIdAndUpdate(
       id,
-      { date, time, notes, status },
+      { date, time, notes, status, totalAmount },
       { new: true }
     ).populate("user service branch employee");
 
@@ -224,7 +218,6 @@ const updateBooking = async (req, res) => {
   }
 };
 
-// Delete booking
 const deleteBooking = async (req, res) => {
   try {
     const { id } = req.params;
@@ -257,8 +250,8 @@ const updateStatus = async (req, res) => {
       bookingId,
       { status, updatedAt: Date.now() },
       {
-        new: true,              // Trả về document đã update
-        runValidators: true,    // Chạy validator của schema
+        new: true,
+        runValidators: true,
       }
     );
 
@@ -284,7 +277,6 @@ const updateStatus = async (req, res) => {
   }
 };
 
-// Thêm hàm này vào bookingController.js
 const checkEmployeeAvailability = async (req, res) => {
   try {
     const { employeeId, date, time, duration } = req.query;
@@ -302,7 +294,7 @@ const checkEmployeeAvailability = async (req, res) => {
     });
 
     const requestedStart = convertTimeToMinutes(time);
-    const requestedEnd = requestedStart + (parseInt(duration) || 60); // Mặc định 60 phút nếu không có duration
+    const requestedEnd = requestedStart + (parseInt(duration) || 60);
 
     for (const booking of bookings) {
       const bookingStart = convertTimeToMinutes(booking.time);
@@ -326,7 +318,6 @@ const checkEmployeeAvailability = async (req, res) => {
   }
 };
 
-// Hàm hỗ trợ chuyển đổi thời gian
 function convertTimeToMinutes(timeStr) {
   const [hours, minutes] = timeStr.split(':').map(Number);
   return hours * 60 + minutes;
@@ -337,6 +328,7 @@ function formatMinutesToTime(minutes) {
   const mins = minutes % 60;
   return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 }
+
 export {
   createBooking,
   getAllBookings,
@@ -347,4 +339,3 @@ export {
   updateStatus,
   checkEmployeeAvailability,
 };
-

@@ -42,10 +42,10 @@ const bookingSchema = new mongoose.Schema({
     trim: true,
     match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, // Validation email cơ bản
   },
- status: {
-  type: String,
-  default: "Đang xử lý"
-},
+  status: {
+    type: String,
+    default: "Đang xử lý"
+  },
   updatedAt: {
     type: Date,
     default: Date.now,
@@ -53,6 +53,14 @@ const bookingSchema = new mongoose.Schema({
   notes: {
     type: String,
     trim: true,
+  },
+  discount: {
+    type: Number,
+    default: 0,
+  },
+  totalAmount: {
+    type: Number,
+    required: true,
   },
 });
 
