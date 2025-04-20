@@ -361,25 +361,43 @@ const removeUser = async (req, res) => {
   }
 };
 
-const updateUser = async (req, res) => {
+export const updateUser = async (req, res) => {
   try {
-      const updateData = { ...req.body };  
-      if (req.file) {
-          updateData.image = req.file.filename;
-      }
-      
-      const updatedUser = await userModel.findByIdAndUpdate(req.params.id, updateData, { new: true });
-      
-      if (!updatedUser) {
-          return res.status(404).json({ success: false, message: "Không tìm thấy người dùng để cập nhật" });
-      }
-      
-      res.json({ success: true, data: updatedUser });
+    // build object update từ body
+    const updateData = { ...req.body };
+
+    // nếu có file avatar, upload lên Cloudinary
+    if (req.file) {
+      // chuyển buffer thành base64
+      const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+
+      const result = await cloudinary.uploader.upload(dataUri, {
+        folder: 'user_avatars',
+        upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
+      });
+
+      updateData.avatarUrl    = result.secure_url;
+      updateData.avatarPublicId = result.public_id;
+    }
+
+    // cập nhật vào DB
+    const updated = await UserModel.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy user' });
+    }
+    res.json({ success: true, data: updated });
+
   } catch (error) {
-      console.error("Lỗi cập nhật thông tin:", error);
-      res.status(500).json({ success: false, message: "Lỗi cập nhật thông tin người dùng", error: error.message });
+    console.error('Lỗi cập nhật user:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 const updateUserRole = async (req, res) => {
   const { id } = req.params;

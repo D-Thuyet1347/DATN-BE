@@ -10,7 +10,6 @@ const storage = multer.diskStorage({
     }
 })
 const upload = multer({storage:storage})
-
 const userRouter = express.Router()
 userRouter.post('/register', registerUser)
 userRouter.post('/login', loginUser)
@@ -26,7 +25,6 @@ userRouter.post('/:id/role', updateUserRole)
 userRouter.post('/save-voucher', authMiddleware, saveVoucher);           // Route mới
 userRouter.post('/remove-saved-voucher', authMiddleware, removeSavedVoucher); // Route mới
 userRouter.get('/saved-vouchers', authMiddleware, getSavedVouchers);     // Route mới
-// Thêm endpoint mới
 userRouter.get('/me/info', authMiddleware, getCurrentUser)
 
 export default userRouter
