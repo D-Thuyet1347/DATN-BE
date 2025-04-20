@@ -56,7 +56,7 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-
+// Phục vụ thư mục uploads như static files
 app.use('/uploads', express.static('uploads'));
 
 app.listen(port, () => {
