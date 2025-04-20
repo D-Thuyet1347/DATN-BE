@@ -363,11 +363,7 @@ const removeUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
-      const updateData = { ...req.body };  
-      if (req.file) {
-          updateData.image = req.file.filename;
-      }
-      
+      const updateData = { ...req.body };      
       const updatedUser = await userModel.findByIdAndUpdate(req.params.id, updateData, { new: true });
       
       if (!updatedUser) {
