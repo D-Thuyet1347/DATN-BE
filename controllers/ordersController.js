@@ -80,8 +80,8 @@ const placeOrder = async (req, res) => {
       payment_method_types: ["card"],
       line_items: line_items,
       mode: "payment",
-      success_url: `${process.env.ClIENT_URL||"http://localhost:3000"}/verify/success`,
-      cancel_url: `${process.env.ClIENT_URL||"http://localhost:3000"}/verify?success=false&orderId=${newOrder._id}`,
+      success_url: `${process.env.ClIENT_URL||"https://backend-fu3h.onrender.com"}/verify/success`,
+      cancel_url: `${process.env.ClIENT_URL||"https://backend-fu3h.onrender.com/"}/verify?success=false&orderId=${newOrder._id}`,
     });
     res.json({
     success: true, session_url: session.url
