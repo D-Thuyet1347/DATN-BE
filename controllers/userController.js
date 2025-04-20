@@ -361,8 +361,8 @@ const removeUser = async (req, res) => {
   }
 };
 
-export const updateUser = async (req, res) => {
-  try {
+const updateUser = async (req, res) => {
+ try {
     // build object update từ body
     const updateData = { ...req.body };
 
