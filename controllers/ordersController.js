@@ -18,7 +18,10 @@ const placeOrder = async (req, res) => {
       return {
         productId: item._id,
         name: item.name,
-        price: Number(item.price),
+        price: String(item.price).toLocaleDateString("vi-VN", {
+          style: "currency",
+          currency: "VND",
+        }),
         quantity: Number(item.quantity),
         image: item.image,
       };
@@ -26,7 +29,11 @@ const placeOrder = async (req, res) => {
     const newOrder = new orderModel({
       userId,
       items: formattedItems,
-      totalAmount: Number(totalAmount),
+      totalAmount: String(totalAmount).toLocaleDateString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
+      orderDate: new Date(),
       shippingAddress,
       paymentMethod,
       paymentStatus: paymentMethod === "card" ? "Thanh toán bằng ngân hàng" : "Thanh toán khi nhận hàng",
@@ -50,16 +57,19 @@ const placeOrder = async (req, res) => {
     const line_items = [
       ...formattedItems.map(item => ({
         price_data: {
-          currency: "vnd",
+          currency: "VND",
           product_data: { name: item.name,
            },
-          unit_amount: item.price, 
+          unit_amount: item.price.toLocaleDateString("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          }),
         },
         quantity: item.quantity,
       })),
       {
         price_data: {
-          currency: "vnd",
+          currency: "VND",
           product_data: { name: "Phí vận chuyển" },
           unit_amount: 30000, 
         },
