@@ -361,21 +361,26 @@ const removeUser = async (req, res) => {
   }
 };
 
+import mongoose from 'mongoose'; // nếu dùng ES Modules
+
 const updateUser = async (req, res) => {
   try {
-      const updateData = { ...req.body };      
-      const updatedUser = await userModel.findByIdAndUpdate(req.params.id, updateData, { new: true });
-      
-      if (!updatedUser) {
-          return res.status(404).json({ success: false, message: "Không tìm thấy người dùng để cập nhật" });
-      }
-      
-      res.json({ success: true, data: updatedUser });
+    const userId = req.params.id;
+    const updateData = { ...req.body };      
+    const updatedUser = await userModel.findByIdAndUpdate(userId, updateData, { new: true });
+    
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy người dùng để cập nhật" });
+    }
+
+    res.json({ success: true, data: updatedUser });
+
   } catch (error) {
-      console.error("Lỗi cập nhật thông tin:", error);
-      res.status(500).json({ success: false, message: "Lỗi cập nhật thông tin người dùng", error: error.message });
+    console.error("Lỗi cập nhật thông tin:", error);
+    res.status(500).json({ success: false, message: "Lỗi cập nhật thông tin người dùng", error: error.message });
   }
 };
+
 
 const updateUserRole = async (req, res) => {
   const { id } = req.params;
