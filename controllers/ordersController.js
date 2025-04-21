@@ -4,6 +4,10 @@ import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 
+const formatCurrency = (value) => {
+  return Number(value).toLocaleString("vi-VN", { style: "currency", currency: "VND" });
+};
+
 const placeOrder = async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -13,26 +17,29 @@ const placeOrder = async (req, res) => {
         message: "Không tìm thấy thông tin người dùng",
       });
     }
+
     const { items, totalAmount, shippingAddress, paymentMethod, note } = req.body;
-    const formattedItems = items.map(item => {
-      return {
-        productId: item._id,
-        name: item.name,
-        price: String(item.price).toLocaleDateString("vi-VN", {
-          style: "currency",
-          currency: "VND",
-        }),
-        quantity: Number(item.quantity),
-        image: item.image,
-      };
-    });
+
+    const formattedItems = items.map(item => ({
+      productId: item._id,
+      name: item.name,
+      price: formatCurrency(item.price),
+      quantity: Number(item.quantity),
+      image: item.image,
+    }));
+
+    const totalProductAmount = items.reduce((total, item) => total + (item.price * item.quantity), 0);
+
+    const shippingFee = 30000; 
+    const totalAmountWithShipping = totalProductAmount + shippingFee;
+
+    // Format tổng số tiền hiển thị
+    const formattedTotalAmount = formatCurrency(totalAmountWithShipping);
+
     const newOrder = new orderModel({
       userId,
       items: formattedItems,
-      totalAmount: String(totalAmount).toLocaleDateString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+      totalAmount: formattedTotalAmount,
       orderDate: new Date(),
       shippingAddress,
       paymentMethod,
@@ -41,12 +48,12 @@ const placeOrder = async (req, res) => {
       orderStatus: "Đang xử lý",
     });
 
-    // Lưu đơn hàng vào database
     const savedOrder = await newOrder.save();
-    
-    // Xóa giỏ hàng
+
+    // Xoá giỏ hàng sau khi đặt
     await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
+    // Trả về nếu là COD
     if (paymentMethod === "Thanh toán khi nhận hàng") {
       return res.json({
         success: true,
@@ -54,37 +61,37 @@ const placeOrder = async (req, res) => {
         orderId: savedOrder._id,
       });
     }
+
+    // Tạo line_items cho Stripe (bao gồm sản phẩm và phí vận chuyển)
     const line_items = [
-      ...formattedItems.map(item => ({
+      ...items.map(item => ({
         price_data: {
           currency: "VND",
-          product_data: { name: item.name,
-           },
-          unit_amount: item.price.toLocaleDateString("vi-VN", {
-            style: "currency",
-            currency: "VND",
-          }),
+          product_data: { name: item.name },
+          unit_amount: Math.round(Number(item.price) * 1000), 
         },
-        quantity: item.quantity,
+        quantity: Number(item.quantity),
       })),
       {
         price_data: {
           currency: "VND",
           product_data: { name: "Phí vận chuyển" },
-          unit_amount: 30000, 
+          unit_amount: 30000, // Phí vận chuyển
         },
         quantity: 1,
       },
     ];
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      line_items: line_items,
+      line_items,
       mode: "payment",
-      success_url: `${process.env.ClIENT_URL||"https://backend-fu3h.onrender.com"}/verify/success`,
-      cancel_url: `${process.env.ClIENT_URL||"https://backend-fu3h.onrender.com/"}/verify?success=false&orderId=${newOrder._id}`,
+      success_url: `${process.env.CLIENT_URL || "https://backend-fu3h.onrender.com"}/verify/success`,
+      cancel_url: `${process.env.CLIENT_URL || "https://backend-fu3h.onrender.com"}/verify?success=false&orderId=${newOrder._id}`,
     });
     res.json({
-    success: true, session_url: session.url
+      success: true,
+      session_url: session.url,
     });
   } catch (error) {
     console.error("Lỗi khi xử lý đơn hàng:", error);
@@ -95,7 +102,6 @@ const placeOrder = async (req, res) => {
   }
 };
 
-// Kiểm tra thanh toán
 const verifyOrder = async (req, res) => {
     const { orderId, success } = req.body;
     try {

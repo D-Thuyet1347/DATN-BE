@@ -4,7 +4,7 @@ const orderSchema = new mongoose.Schema(
     {
       userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
       items: { type: Array, required: true },
-      totalAmount: { type: Number, required: true }, // Thêm trường này
+      totalAmount: { type: String, required: true }, // Thêm trường này
       shippingAddress: { type: Object, required: true },
       orderStatus: { type: String, default: "Đang xử lý" },
       orderDate: { type: Date, default: Date.now },
