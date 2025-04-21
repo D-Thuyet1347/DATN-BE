@@ -65,13 +65,12 @@ const registerUser = async (req, res) => {
     const newUser = new userModel({
       email,
       password: hashedPassword,
-      verificationCode: generateVerificationCode(), // Lưu mã xác nhận vào cơ sở dữ liệu
-      verificationCodeExpires: Date.now() + 3600000, // Thời gian hết hạn 1 giờ
+      verificationCode: generateVerificationCode(), 
+      verificationCodeExpires: Date.now() + 3600000, 
     });
 
-    const user = await newUser.save();
+    await newUser.save();
 
-    // Gửi email xác nhận
     await sendConfirmationEmail(email, newUser.verificationCode);
 
     res.json({
