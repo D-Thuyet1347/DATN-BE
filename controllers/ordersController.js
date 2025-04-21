@@ -3,11 +3,6 @@ import userModel from "../models/userModel.js";
 import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-
-const formatCurrency = (value) => {
-  return Number(value).toLocaleString("vi-VN", { style: "currency", currency: "VND" });
-};
-
 const placeOrder = async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -18,23 +13,30 @@ const placeOrder = async (req, res) => {
       });
     }
 
-    const { items, totalAmount, shippingAddress, paymentMethod, note } = req.body;
+    const {
+      items,
+      shippingAddress,
+      paymentMethod,
+      note,
+      discount = 0,
+    } = req.body;
 
     const formattedItems = items.map(item => ({
       productId: item._id,
       name: item.name,
-      price: formatCurrency(item.price),
+      price: item.price,
       quantity: Number(item.quantity),
       image: item.image,
     }));
 
-    const totalProductAmount = items.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const totalProductAmount = items.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0
+    );
 
-    const shippingFee = 30000; 
-    const totalAmountWithShipping = totalProductAmount + shippingFee;
-
-    // Format tổng số tiền hiển thị
-    const formattedTotalAmount = formatCurrency(totalAmountWithShipping);
+    const shippingFee = 30000; // VND
+    const totalAmountWithShipping = totalProductAmount * 1000 + shippingFee;
+    const formattedTotalAmount = totalAmountWithShipping - discount;
 
     const newOrder = new orderModel({
       userId,
@@ -43,8 +45,12 @@ const placeOrder = async (req, res) => {
       orderDate: new Date(),
       shippingAddress,
       paymentMethod,
-      paymentStatus: paymentMethod === "card" ? "Thanh toán bằng ngân hàng" : "Thanh toán khi nhận hàng",
+      paymentStatus:
+        paymentMethod === "card"
+          ? "Thanh toán bằng ngân hàng"
+          : "Thanh toán khi nhận hàng",
       note,
+      discount,
       orderStatus: "Đang xử lý",
     });
 
@@ -53,7 +59,7 @@ const placeOrder = async (req, res) => {
     // Xoá giỏ hàng sau khi đặt
     await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
-    // Trả về nếu là COD
+    // Nếu thanh toán COD thì trả về luôn
     if (paymentMethod === "Thanh toán khi nhận hàng") {
       return res.json({
         success: true,
@@ -62,33 +68,54 @@ const placeOrder = async (req, res) => {
       });
     }
 
-    // Tạo line_items cho Stripe (bao gồm sản phẩm và phí vận chuyển)
+    // Map sản phẩm để truyền vào Stripe
+    const itemsWithPrice = items.map(item => ({
+      price_data: {
+        currency: "VND",
+        product_data: { name: item.name },
+        unit_amount: Math.round(item.price * 1000),
+      },
+      quantity: Number(item.quantity),
+    }));
+
+    // Thêm phí vận chuyển
     const line_items = [
-      ...items.map(item => ({
-        price_data: {
-          currency: "VND",
-          product_data: { name: item.name },
-          unit_amount: Math.round(Number(item.price) * 1000), 
-        },
-        quantity: Number(item.quantity),
-      })),
+      ...itemsWithPrice,
       {
         price_data: {
           currency: "VND",
           product_data: { name: "Phí vận chuyển" },
-          unit_amount: 30000, // Phí vận chuyển
+          unit_amount: shippingFee,
         },
         quantity: 1,
       },
     ];
 
+    // Tạo Stripe coupon nếu có giảm giá
+    let discounts = [];
+    if (discount > 0) {
+      const coupon = await stripe.coupons.create({
+        name: "Mã giảm giá",
+        currency: "VND",
+        amount_off: discount,
+      });
+      discounts = [{ coupon: coupon.id }];
+    }
+
+    // Tạo session thanh toán Stripe
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items,
       mode: "payment",
+      discounts,
       success_url: `${process.env.CLIENT_URL || "https://backend-fu3h.onrender.com"}/verify/success`,
       cancel_url: `${process.env.CLIENT_URL || "https://backend-fu3h.onrender.com"}/verify?success=false&orderId=${newOrder._id}`,
+      metadata: {
+        orderId: savedOrder._id.toString(),
+        discount: discount.toString(),
+      },
     });
+
     res.json({
       success: true,
       session_url: session.url,
@@ -101,7 +128,6 @@ const placeOrder = async (req, res) => {
     });
   }
 };
-
 const verifyOrder = async (req, res) => {
     const { orderId, success } = req.body;
     try {
@@ -146,8 +172,6 @@ const userOrders = async (req, res) => {
     res.json({ success: false, message: "Error fetching orders", error: error.message });
   }
 };
-
-// Lấy danh sách tất cả đơn hàng
 const listOrders = async (req, res) => {
     try {
         const orders = await orderModel.find({});
@@ -158,7 +182,6 @@ const listOrders = async (req, res) => {
         res.json({ success: false, message: "Error fetching orders", error: error.message });
     }
 };
-
 const updateStatus = async (req, res) => {
   try {
       const { orderId, orderStatus } = req.body; 
@@ -218,5 +241,4 @@ const deleteOrder = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 export { placeOrder, verifyOrder, userOrders, listOrders, updateStatus, deleteOrder };
