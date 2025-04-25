@@ -8,7 +8,7 @@ emplyeeRouter.put('/update/:id',updateEmployee);
 emplyeeRouter.delete('/delete/:id',deleteEmployee);
 emplyeeRouter.get('/list',getAllEmployees);
 emplyeeRouter.get('/:id/bookings', getEmployeeBookings);
-router.get("/branch/:branchId", getEmployeesByBranch);
+emplyeeRouter.get("/branch/:branchId", getEmployeesByBranch);
 
 
 export default emplyeeRouter;
