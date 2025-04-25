@@ -11,7 +11,7 @@ bookingRouter.post("/add",authMiddleware, createBooking);
 bookingRouter.get("/bookings/user",authMiddleware, getBookingUser);
 bookingRouter.put("/status",updateStatus);
 bookingRouter.get("/check-availability", checkEmployeeAvailability);
-router.get("/branch/:branchId", authMiddleware, getBookingsByBranch);
+bookingRouter.get("/branch/:branchId", authMiddleware, getBookingsByBranch);
 
 
 export default bookingRouter;
