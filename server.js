@@ -17,6 +17,7 @@ import blog from './routes/blogRoutes.js';
 import bookingRouter from "./routes/bookingRoutes.js";
 import serviceRouter from "./routes/serviceRoutes.js";
 import slideBannerRouter from "./routes/bannerRoutes.js";
+import managerRouter from "./routes/employeeRoutes.js";
 
 const app = express();
 const port = 4000;
@@ -45,6 +46,7 @@ app.use('/api/blog', blog);
 app.use('/api/booking', bookingRouter);
 app.use('/api/service', serviceRouter);
 app.use('/api/slide', slideBannerRouter);
+app.use('/api/manager', managerRouter); 
 
 app.get("/", (req, res) => {
   res.send("api");
