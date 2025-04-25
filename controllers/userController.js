@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import validator from "validator";
 import nodemailer from "nodemailer";
+import BranchModel from "../models/branchModel.js";
 
 const createToken = (id) => {
   if (!process.env.JWT_SECRET) {
@@ -128,25 +129,37 @@ const loginUser = async (req, res) => {
     const user = await userModel.findOne({ email });
 
     if (!user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User doesn't exist" });
+      return res.status(400).json({
+        success: false,
+        message: "User doesn't exist",
+      });
     }
 
     if (!user.isEmailVerified) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email not verified" });
+      return res.status(400).json({
+        success: false,
+        message: "Email not verified",
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid credentials" });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
     }
 
     const token = createToken(user._id);
+
+    // === Lấy branchId nếu là manager ===
+    let branchId = null;
+    if (user.role === "manager") {
+      const branchStaff = await BranchModel.findOne({ UserID: user._id });
+      if (branchStaff && branchStaff.BranchID) {
+        branchId = branchStaff.BranchID;
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -156,16 +169,19 @@ const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        branchId: branchId, // 🟢 Trả về branchId ở đây
       },
       message: "Login successful",
     });
   } catch (error) {
     console.error("Login Error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
   }
 };
+
 
 // quên  mk
 // Tạo mã xác nhận (OTP)
