@@ -4,7 +4,7 @@ import BranchModel from "../models/branchModel.js";
 
 const addManager = async (req, res) => {
     try {
-        const { BranchID, UserID, Role, Status } = req.body;
+        const { BranchID, UserID, Role, Position } = req.body;
 
         const user = await UserModel.findById(UserID);
         if (!user) {
@@ -19,7 +19,8 @@ const addManager = async (req, res) => {
         const newManager = new ManagerModel({
             BranchID,
             UserID,
-            Role
+            Role,
+            Position
         });
 
         await newManager.save();
