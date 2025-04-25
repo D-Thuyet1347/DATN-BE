@@ -154,6 +154,39 @@ const getAllBookings = async (req, res) => {
     res.status(500).json({ message: "Lỗi máy chủ", error });
   }
 };
+const getBookingsByBranch = async (req, res) => {
+  try {
+    const { branchId } = req.params;
+
+    if (!branchId) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu branchId trong yêu cầu",
+      });
+    }
+
+    const bookings = await BookingModel.find({ branch: branchId })
+      .populate("user", "firstName lastName")
+      .populate("service", "name price")
+      .populate("branch", "BranchName")
+      .populate({
+        path: "employee",
+        populate: { path: "UserID", select: "firstName lastName" },
+      });
+
+    res.status(200).json({
+      success: true,
+      data: bookings,
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy lịch đặt theo chi nhánh:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi máy chủ khi lấy dữ liệu lịch đặt",
+      error: error.message,
+    });
+  }
+};
 
 const getBookingById = async (req, res) => {
   try {
@@ -338,4 +371,5 @@ export {
   getBookingById,
   updateStatus,
   checkEmployeeAvailability,
+  getBookingsByBranch
 };

@@ -1,5 +1,5 @@
 import express from "express";
-import { createBooking, getAllBookings, updateBooking, deleteBooking, getBookingUser, updateStatus, checkEmployeeAvailability } from "../controllers/bookingController.js";
+import { createBooking, getAllBookings, updateBooking, deleteBooking, getBookingUser, updateStatus, checkEmployeeAvailability, getBookingsByBranch } from "../controllers/bookingController.js";
 import authMiddleware from "../middleware/auth.js";
 
 const bookingRouter = express.Router();
@@ -11,6 +11,7 @@ bookingRouter.post("/add",authMiddleware, createBooking);
 bookingRouter.get("/bookings/user",authMiddleware, getBookingUser);
 bookingRouter.put("/status",updateStatus);
 bookingRouter.get("/check-availability", checkEmployeeAvailability);
+router.get("/branch/:branchId", authMiddleware, getBookingsByBranch);
 
 
 export default bookingRouter;

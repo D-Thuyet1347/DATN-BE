@@ -30,7 +30,32 @@ const addEmployee = async (req, res) => {
         res.status(500).json({ message: "Lỗi khi thêm nhân viên", error });
     }
 };
-
+const getEmployeesByBranch = async (req, res) => {
+    try {
+      const { branchId } = req.params;
+  
+      if (!branchId) {
+        return res.status(400).json({ message: "Thiếu mã chi nhánh (branchId)" });
+      }
+  
+      const employees = await EmployeeModel.find({ BranchID: branchId })
+        .populate("UserID", "firstName lastName email phone")
+        .populate("BranchID", "BranchName");
+  
+      res.status(200).json({
+        success: true,
+        data: employees
+      });
+    } catch (error) {
+      console.error("Lỗi khi lấy nhân viên theo chi nhánh:", error);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi máy chủ khi lấy danh sách nhân viên theo chi nhánh",
+        error: error.message
+      });
+    }
+  };
+  
 const updateEmployee = async (req, res) => {
     try {
         const { id } = req.params;
@@ -141,4 +166,4 @@ const getEmployeeBookings = async (req, res) => {
   };
 
 
-export { addEmployee, updateEmployee, deleteEmployee, getAllEmployees,getEmployeeBookings };
+export { addEmployee, updateEmployee, deleteEmployee, getAllEmployees,getEmployeeBookings ,getEmployeesByBranch};
