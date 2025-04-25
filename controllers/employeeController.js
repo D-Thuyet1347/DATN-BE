@@ -34,9 +34,7 @@ const addEmployee = async (req, res) => {
 const updateEmployee = async (req, res) => {
     try {
         const { id } = req.params;
-        const updateData = req.body;  // Nhận toàn bộ dữ liệu từ req.body
-
-        // Cập nhật nhân viên với toàn bộ dữ liệu từ updateData
+        const updateData = req.body; 
         const updatedEmployee = await EmployeeModel.findByIdAndUpdate(id, updateData, { new: true });
 
         if (!updatedEmployee) {
