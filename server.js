@@ -17,7 +17,7 @@ import blog from './routes/blogRoutes.js';
 import bookingRouter from "./routes/bookingRoutes.js";
 import serviceRouter from "./routes/serviceRoutes.js";
 import slideBannerRouter from "./routes/bannerRoutes.js";
-import managerRouter from "./routes/employeeRoutes.js";
+import managerRouter from "./routes/managerRoutes.js";
 
 const app = express();
 const port = 4000;

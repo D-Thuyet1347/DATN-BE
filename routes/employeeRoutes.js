@@ -1,16 +1,12 @@
-import express from "express";
-import {
-  addManager,
-  updateManager,
-  deleteManager,
-  getAllManagers,
-} from "../controllers/managerController.js";
+import express from 'express';
+import {addEmployee,updateEmployee,deleteEmployee,getAllEmployees, getEmployeeBookings} from '../controllers/employeeController.js';
 
-const managerRouter = express.Router();
+const emplyeeRouter = express.Router();
 
-managerRouter.post("/add", addManager);
-managerRouter.put("/update/:id", updateManager);
-managerRouter.delete("/delete/:id", deleteManager);
-managerRouter.get("/list", getAllManagers);
+emplyeeRouter.post('/add',addEmployee);
+emplyeeRouter.put('/update/:id',updateEmployee);
+emplyeeRouter.delete('/delete/:id',deleteEmployee);
+emplyeeRouter.get('/list',getAllEmployees);
+emplyeeRouter.get('/:id/bookings', getEmployeeBookings);
 
-export default managerRouter;
+export default emplyeeRouter;
