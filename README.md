@@ -3,7 +3,7 @@ cách cài đặt/
 --- npm install
 2. Chạy chương trìn
 --- npm run server
-3. backend-project/
+3. backend-project
 ├── config/                  # Các tệp cấu hình (ví dụ: cơ sở dữ liệu, lưu trữ đám mây)
 │   ├── db.js                # Cấu hình kết nối cơ sở dữ liệu (ví dụ: MongoDB)
 ├── controllers/             # Các controller xử lý các yêu cầu
