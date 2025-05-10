@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
   verificationCode: { type: String },
   verificationCodeExpires: { type: Date },
   isEmailVerified: { type: Boolean, default: false },
-  vouchers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Voucher' }], // Thay savedVouchers thành vouchers để đồng bộ
+  vouchers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Voucher' }], 
 }, { minimize: false });
 
 const userModel = mongoose.models.user || mongoose.model('User', userSchema);

@@ -3,8 +3,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import validator from "validator";
 import nodemailer from "nodemailer";
-import BranchModel from "../models/branchModel.js";
-import ManagerModel from "../models/managerModel.js";
+import EmployeeModel from "../models/employeeModel.js";
 
 const createToken = (id) => {
   if (!process.env.JWT_SECRET) {
@@ -37,11 +36,12 @@ const sendConfirmationEmail = async (email, verificationCode) => {
   await transporter.sendMail(mailOptions);
 };
 const registerUser = async (req, res) => {
-  const { password, email } = req.body;
+  const { password, email, role = "user" } = req.body; 
   try {
     if (!validator.isEmail(email)) {
       return res.json({ success: false, message: "Email không hợp lệ" });
     }
+
     const existingUser = await userModel.findOne({ email });
     if (existingUser) {
       return res.json({ success: false, message: "Email đã tồn tại" });
@@ -64,26 +64,30 @@ const registerUser = async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+
     const newUser = new userModel({
       email,
       password: hashedPassword,
-      verificationCode: generateVerificationCode(), 
-      verificationCodeExpires: Date.now() + 3600000, 
+      role,
+      verificationCode: generateVerificationCode(),
+      verificationCodeExpires: Date.now() + 3600000,
     });
 
-    await newUser.save();
+    const user = await newUser.save();
 
+    // Gửi email xác nhận
     await sendConfirmationEmail(email, newUser.verificationCode);
 
-    res.json({
+    return res.json({
       success: true,
       message: "Đăng ký thành công! Kiểm tra email để kích hoạt tài khoản.",
     });
   } catch (error) {
     console.error(error);
-    res.json({ success: false, message: error });
+    return res.json({ success: false, message: "Lỗi máy chủ" });
   }
 };
+
 const confirmEmail = async (req, res) => {
   const { verificationCode } = req.params;
 
@@ -122,7 +126,7 @@ const confirmEmail = async (req, res) => {
 };
 
 
-
+//login
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -130,25 +134,25 @@ const loginUser = async (req, res) => {
     const user = await userModel.findOne({ email });
 
     if (!user) {
-      return res.status(400).json({ success: false, message: "User doesn't exist" });
+      return res
+        .status(400)
+        .json({ success: false, message: "User doesn't exist" });
     }
 
     if (!user.isEmailVerified) {
-      return res.status(400).json({ success: false, message: "Email not verified" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email not verified" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: "Invalid credentials" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     const token = createToken(user._id);
-
-    let branchId = null;
-    if (user.role === "manager") {
-      const manager = await ManagerModel.findOne({ UserID: user._id });
-      branchId = manager?.BranchID || null;
-    }
 
     return res.status(200).json({
       success: true,
@@ -158,17 +162,16 @@ const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        branchId: branchId, // Trả về thêm branchId nếu có
       },
       message: "Login successful",
     });
   } catch (error) {
     console.error("Login Error:", error);
-    return res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
-
-
 
 // quên  mk
 // Tạo mã xác nhận (OTP)
@@ -383,7 +386,6 @@ const updateUser = async (req, res) => {
   }
 };
 
-
 const updateUserRole = async (req, res) => {
   const { id } = req.params;
   const {role } =
@@ -469,8 +471,6 @@ const getCurrentUser = async (req, res) => {
     });
   }
 };
-
-
 const saveVoucher = async (req, res) => {
   const { voucherId } = req.body;
   const userId = req.user?.id;
@@ -545,6 +545,7 @@ const getSavedVouchers = async (req, res) => {
 };
 
 
+
 export {
   registerUser,
   loginUser,
@@ -560,5 +561,5 @@ export {
   saveVoucher,
   removeSavedVoucher,
   getSavedVouchers,
-  confirmEmail 
+  confirmEmail ,
 };
