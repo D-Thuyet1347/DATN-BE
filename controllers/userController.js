@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import validator from "validator";
 import nodemailer from "nodemailer";
-import EmployeeModel from "../models/employeeModel.js";
 
 const createToken = (id) => {
   if (!process.env.JWT_SECRET) {
@@ -28,7 +27,7 @@ const sendConfirmationEmail = async (email, verificationCode) => {
     html: `
       <p>Chào bạn,</p>
       <p>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng nhấp vào nút dưới đây để xác nhận tài khoản của bạn:</p>
-      <a href="http://localhost:4000/api/user/confirm/${verificationCode}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block;">Xác nhận email</a>
+      <a href="http://tvd2003.id.vn/api/user/confirm/${verificationCode}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block;">Xác nhận email</a>
       <p>Chúc bạn một ngày tốt lành!</p>
     `,
   };
