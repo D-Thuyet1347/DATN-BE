@@ -1,5 +1,5 @@
 import express from 'express';
-import { handleVnpayIPN, handleVnpayReturn } from '../controllers/vnpaycontroller.js';
+import { handleVnpayIPN, handleVnpayReturn } from '../controllers/vnpayController.js';
 
 const vnpayRouter = express.Router();
 
