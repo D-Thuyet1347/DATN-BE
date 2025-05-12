@@ -19,9 +19,6 @@ const serviceSchema = new mongoose.Schema({
     },
 });
 
-
-//middleware to update the updatedAt field before saving
-// This middleware will run before every save operation
 serviceSchema.pre('save', function (next) {
     this.updatedAt = Date.now();
     next();

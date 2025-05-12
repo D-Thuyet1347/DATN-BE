@@ -1,4 +1,6 @@
 import categoryModel from "../models/categoryModel.js";
+import ProductModel from "../models/productModel.js";
+import ServiceModel from "../models/serviceModel.js";
 
 //them danh muc
 const addCategory = async (req, res) => {
@@ -41,16 +43,31 @@ const updateCategory = async (req, res) => {
 
 const removeCategory = async (req, res) => {
     try {
-        const category = await categoryModel.findByIdAndDelete(req.body.id);
+        const categoryId = req.body.id;
+        const category = await categoryModel.findByIdAndDelete(categoryId);
+
         if (!category) {
             return res.status(404).json({ success: false, message: "Không tìm thấy danh mục để xóa" });
         }
-        res.status(200).json({ success: true, message: "Xóa danh mục thành công", data: category });
+
+        const categoryName = category.name;
+
+        await ProductModel.deleteMany({ Category: categoryName });
+
+        // Xóa tất cả dịch vụ có category trùng tên
+        await ServiceModel.deleteMany({ category: categoryName });
+
+        res.status(200).json({ 
+            success: true, 
+            message: "Xóa danh mục và tất cả sản phẩm/dịch vụ liên quan thành công", 
+            data: category 
+        });
     } catch (error) {
         console.log(error);
         res.status(500).json({ success: false, message: 'Lỗi khi xóa danh mục' });
     }
 };
+
 
 const getCategoryById = async (req, res) => {
     try {
@@ -91,5 +108,4 @@ const searchCategory = async (req, res) => {
 };
 
 export { addCategory, listCategory, updateCategory, removeCategory, getCategoryById, searchCategory };
-
 
