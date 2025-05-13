@@ -140,9 +140,9 @@ const placeOrder = async (req, res) => {
       res.json({
         success: true,
         message: "Order created, proceed to VNPAY payment.",
-        orderId: savedOrder._id, // Trả về orderId để frontend gọi API tạo URL VNPAY
-        totalAmount: savedOrder.totalAmount, // Trả về số tiền để frontend gọi API tạo URL VNPAY
-        orderDescription: `Thanh toan don hang ${savedOrder._id}` // Mô tả đơn hàng
+        orderId: savedOrder._id, 
+        totalAmount: savedOrder.totalAmount, 
+        orderDescription: `Thanh toan don hang ${savedOrder._id}`
       });
 
     } else {
