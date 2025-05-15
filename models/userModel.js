@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema({
   verificationCodeExpires: { type: Date },
   isEmailVerified: { type: Boolean, default: false },
   vouchers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Voucher' }], 
+  createdAt: { type: Date, default: Date.now },
 }, { minimize: false });
 
 const userModel = mongoose.models.user || mongoose.model('User', userSchema);
