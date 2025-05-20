@@ -12,14 +12,14 @@ const createToken = (id) => {
 };
 
 const sendConfirmationEmail = async (email, verificationCode) => {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
+   const transporter = nodemailer.createTransport({
+    service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
   });
-
+  const confirmUrl = `${process.env.CLIENT_URL}/confirm-email/${verificationCode}`;
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
@@ -27,13 +27,15 @@ const sendConfirmationEmail = async (email, verificationCode) => {
     html: `
       <p>Chào bạn,</p>
       <p>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng nhấp vào nút dưới đây để xác nhận tài khoản của bạn:</p>
-      <a href="http://4000/api/user/confirm/${verificationCode}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block;">Xác nhận email</a>
+      <a href="${confirmUrl}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block;">Xác nhận email</a>
       <p>Chúc bạn một ngày tốt lành!</p>
     `,
   };
 
   await transporter.sendMail(mailOptions);
 };
+
+
 const registerUser = async (req, res) => {
   const { password, email, role = "user" } = req.body; 
   try {
@@ -93,36 +95,49 @@ const confirmEmail = async (req, res) => {
   try {
     const user = await userModel.findOne({ verificationCode });
 
+    // Nếu không tìm thấy user theo code
     if (!user) {
-      return res.json({
-        success: false,
-        message: "Mã xác nhận không hợp lệ hoặc đã hết hạn",
+      return res.status(400).json({
+        success: true,
+        message: 'Tài khoản của bạn đã được xác nhận thành công!',
       });
     }
 
-    // Kiểm tra xem mã xác nhận có hết hạn không
+    // Nếu đã xác nhận trước đó
+    if (user.isEmailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email của bạn đã được xác nhận trước đó.',
+      });
+    }
+
+    // Kiểm tra mã có hết hạn không
     if (user.verificationCodeExpires < Date.now()) {
-      return res.json({
+      return res.status(400).json({
         success: false,
-        message: "Mã xác nhận đã hết hạn",
+        message: 'Mã xác nhận đã hết hạn',
       });
     }
 
-    // Cập nhật trạng thái tài khoản thành đã xác nhận
-    user.verificationCode = null; // Xóa mã xác nhận sau khi sử dụng
-    user.verificationCodeExpires = null; // Xóa thời gian hết hạn
-    user.isEmailVerified = true; // Đánh dấu email đã xác nhận
+    // Cập nhật trạng thái verified
+    user.verificationCode = null;
+    user.verificationCodeExpires = null;
+    user.isEmailVerified = true;
     await user.save();
 
-    res.json({
+    return res.status(200).json({
       success: true,
-      message: "Tài khoản của bạn đã được xác nhận thành công!",
+      message: 'Tài khoản của bạn đã được xác nhận thành công!',
     });
   } catch (error) {
-    console.error(error);
-    res.json({ success: false, message: "Có lỗi xảy ra. Vui lòng thử lại sau." });
+    console.error('Lỗi xác thực email:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Có lỗi xảy ra. Vui lòng thử lại sau.',
+    });
   }
 };
+
 
 
 //login
