@@ -187,8 +187,6 @@ const loginUser = async (req, res) => {
   }
 };
 
-// quên  mk
-// Tạo mã xác nhận (OTP)
 const generateVerificationCode = () => {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

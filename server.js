@@ -56,7 +56,6 @@ app.get("/", (req, res) => {
   res.send("api");
 });
 
-// Đảm bảo thư mục uploads tồn tại
 const uploadDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });

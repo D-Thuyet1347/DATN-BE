@@ -91,7 +91,6 @@ export const createPaymentUrl = async (req, res) => {
     }
 };
 
-// Hàm xử lý VNPAY Return URL
 export const vnpayReturn = async (req, res) => {
     let vnp_Params = req.query;
     const secureHash = vnp_Params['vnp_SecureHash'];
@@ -108,7 +107,7 @@ export const vnpayReturn = async (req, res) => {
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
 
     const clientReturnUrlBase = process.env.CLIENT_URL || 'http://localhost:3000';
-    let redirectUrl = `${clientReturnUrlBase}/payment-status`;
+    let redirectUrl = `${clientReturnUrlBase}/vnpay_return`;
     let success = false;
     let message = '';
 
@@ -131,7 +130,7 @@ export const vnpayReturn = async (req, res) => {
                 if (rspCode === '00') {
                     if (order.paymentStatus !== 'Paid') {
                         order.paymentStatus = 'Thanh toán qua VNPAY';
-                        order.orderStatus = 'Đã thanh toán'; // Cập nhật trạng thái đơn hàng
+                        order.orderStatus = 'Đã thanh toán';
                         await order.save();
                         console.log(`VNPAY Return - Order ${orderId} updated to Paid.`);
                     } else {
@@ -142,7 +141,6 @@ export const vnpayReturn = async (req, res) => {
                 } else {
                     if (order.paymentStatus !== 'Paid') {
                         order.paymentStatus = 'Failed';
-                        // Có thể cập nhật orderStatus nếu muốn
                         await order.save();
                         console.log(`VNPAY Return - Order ${orderId} updated to Failed.`);
                     }
@@ -157,11 +155,18 @@ export const vnpayReturn = async (req, res) => {
             message = 'Lỗi cập nhật đơn hàng';
         }
 
-        if (success) {
-            return res.redirect(`${redirectUrl}/success?message=${encodeURIComponent(message)}`);
-        } else {
-            return res.redirect(`${redirectUrl}/failed?message=${encodeURIComponent(message)}`);
-        }
+        // Redirect kèm theo các thông tin thêm
+        const redirectParams = new URLSearchParams({
+            message,
+            orderId,
+            rspCode: rspCode || '',
+            amount: vnp_Params['vnp_Amount'] || '',
+            bankCode: vnp_Params['vnp_BankCode'] || '',
+            payDate: vnp_Params['vnp_PayDate'] || '',
+            transactionNo: vnp_Params['vnp_TransactionNo'] || '',
+        });
+
+        return res.redirect(`${redirectUrl}/${success ? 'success' : 'failed'}?${redirectParams.toString()}`);
     } else {
         console.log(`VNPAY Return - Invalid Signature. Expected: ${signed}, Received: ${secureHash}`);
         message = 'Chữ ký không hợp lệ';
